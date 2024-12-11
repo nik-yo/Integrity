@@ -10,7 +10,7 @@ Run the following commands in terminal:
 
 4. Run .NET Aspire from Visual Studio or use the following command:
    
-   **dotnet ./api/Integrity.Aspire/Integrity.Aspire.AppHost.dll**
+   ** dotnet run --project ./api/Integrity.Aspire/Integrity.Aspire.AppHost**
 
 5. Change directory to Integrity.Banking.Infrastructure folder and run: **dotnet ef database update** 
 
@@ -18,7 +18,7 @@ Run the following commands in terminal:
 
 1. Run .NET Aspire from Visual Studio or use the following command:
    
-   **dotnet ./api/Integrity.Aspire/Integrity.Aspire.AppHost.dll**
+   ** dotnet run --project ./api/Integrity.Aspire/Integrity.Aspire.AppHost**
 
 2. Visit: https://localhost:7282/scalar/v1
 
