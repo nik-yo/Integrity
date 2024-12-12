@@ -73,11 +73,9 @@ namespace Integrity.Banking.Application
             if (request.InitialDeposit >= 100m)
             {
                 var customer = await repository.GetCustomerAsync(request.CustomerId);
-                if (customer != null)
+                if (customer != null && (customer.Accounts.Count > 0 || request.AccountTypeId == AccountType.Savings))
                 {
                     var newAccount = await repository.CreateAccountAsync(request.CustomerId, request.InitialDeposit,
-                        customer.Accounts.Count == 0 ? 
-                        AccountType.Savings : 
                         request.AccountTypeId);
 
                     if (newAccount != null)

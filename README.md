@@ -32,3 +32,5 @@ https://docs.google.com/document/d/1qMJer3w3KhQji_YLILLASKIV27cZkr51rOjYFI8tDOw/
 4. Response data are not defined, need to ensure not wrong data is returned
 5. When writing back to database, there's redundant db call to make sure that the transaction is still valid. eg. when making deposit, ensure that the account still belongs to the customer in the case it is called independently.
 6. It's probably better to be backed by queue
+7. Instead of POCO, can use Record type
+8. Return might need error message
