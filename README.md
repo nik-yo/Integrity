@@ -31,6 +31,10 @@ https://docs.google.com/document/d/1qMJer3w3KhQji_YLILLASKIV27cZkr51rOjYFI8tDOw/
 3. Integer for id is bad practice or at least needs to be masked on client side
 4. Response data are not defined, need to ensure not wrong data is returned
 5. When writing back to database, there's redundant db call to make sure that the transaction is still valid. eg. when making deposit, ensure that the account still belongs to the customer in the case it is called independently.
-6. It's probably better to be backed by queue
+6. It's better to be backed by queue and DLQ
 7. Instead of POCO, can use Record type
 8. Return might need error message
+9. Idempotency and fault tolerant/retry
+10. Transaction rows will grow, might need a better storage, probably separate table per customer and add authorization so only authorized user can update the table
+11. Guid is not as good Id for searching
+12. Aggregate root

@@ -1,21 +1,19 @@
 ﻿using Integrity.Banking.Application;
 using Integrity.Banking.Domain.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Integrity.Banking.Domain.Models.Config;
 
 namespace Integrity.Banking.Tests
 {
     public class MakeWithdrawalUnitTest
     {
         private readonly TestRepository repository = new();
+        private readonly DbConfig dbConfig = new();
 
         [Fact]
         public async Task MakeValidWithdrawal_ReturnBalanceSubtracted()
         {
-            var bankingService = new BankingService(repository);
+            var logger = TestLoggerFactory.CreateLogger();
+            var bankingService = new BankingService(dbConfig, repository, logger);
 
             var transactionRequest = new TransactionRequest
             {
@@ -43,7 +41,8 @@ namespace Integrity.Banking.Tests
         [Fact]
         public async Task MakeWithdrawalWithInvalidCustomer_ReturnFailed()
         {
-            var bankingService = new BankingService(repository);
+            var logger = TestLoggerFactory.CreateLogger();
+            var bankingService = new BankingService(dbConfig, repository, logger);
 
             var transactionRequest = new TransactionRequest
             {
@@ -71,7 +70,8 @@ namespace Integrity.Banking.Tests
         [Fact]
         public async Task MakeWithdrawalWithInvalidAccount_ReturnFailed()
         {
-            var bankingService = new BankingService(repository);
+            var logger = TestLoggerFactory.CreateLogger();
+            var bankingService = new BankingService(dbConfig, repository, logger);
 
             var transactionRequest = new TransactionRequest
             {
@@ -99,7 +99,8 @@ namespace Integrity.Banking.Tests
         [Fact]
         public async Task MakeWithdrawalWithZeroAmount_ReturnFailed()
         {
-            var bankingService = new BankingService(repository);
+            var logger = TestLoggerFactory.CreateLogger();
+            var bankingService = new BankingService(dbConfig, repository, logger);
 
             var transactionRequest = new TransactionRequest
             {
@@ -127,7 +128,8 @@ namespace Integrity.Banking.Tests
         [Fact]
         public async Task MakeWithdrawalWithAmountMoreThanBalance_ReturnFailed()
         {
-            var bankingService = new BankingService(repository);
+            var logger = TestLoggerFactory.CreateLogger();
+            var bankingService = new BankingService(dbConfig, repository, logger);
 
             var transactionRequest = new TransactionRequest
             {
@@ -150,6 +152,37 @@ namespace Integrity.Banking.Tests
             Assert.Equal(expectedResponse.AccountId, actualResponse.AccountId);
             Assert.Equal(expectedResponse.Balance, actualResponse.Balance);
             Assert.False(actualResponse.Succeeded);
+        }
+
+        [Fact]
+        public async Task MakeDuplicateWithdrawals_ReturnCorrectBalance()
+        {
+            var logger = TestLoggerFactory.CreateLogger();
+            var bankingService = new BankingService(dbConfig, repository, logger);
+
+            var transactionRequest = new TransactionRequest
+            {
+                CustomerId = 1,
+                AccountId = 1,
+                Amount = 10
+            };
+
+            var expectedResponse = new TransactionResponse
+            {
+                CustomerId = 1,
+                AccountId = 1,
+                Balance = 90,
+                Succeeded = true,
+            };
+
+            await bankingService.MakeWithdrawalAsync(transactionRequest);
+
+            var actualResponse = await bankingService.MakeWithdrawalAsync(transactionRequest);
+
+            Assert.Equal(expectedResponse.CustomerId, actualResponse.CustomerId);
+            Assert.Equal(expectedResponse.AccountId, actualResponse.AccountId);
+            Assert.Equal(expectedResponse.Balance, actualResponse.Balance);
+            Assert.True(actualResponse.Succeeded);
         }
     }
 }

@@ -1,21 +1,20 @@
 ﻿using Integrity.Banking.Application;
 using Integrity.Banking.Domain.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Integrity.Banking.Domain.Models.Config;
+using Microsoft.Extensions.Logging;
 
 namespace Integrity.Banking.Tests
 {
     public class CloseAccountUnitTest
     {
         private readonly TestRepository repository = new();
+        private readonly DbConfig dbConfig = new();
 
         [Fact]
         public async Task CloseInvalidAccount_ReturnSucceededFalse()
         {
-            var bankingService = new BankingService(repository);
+            var logger = TestLoggerFactory.CreateLogger();
+            var bankingService = new BankingService(dbConfig, repository, logger);
 
             var closeAccountRequest = new CloseAccountRequest
             {
@@ -40,7 +39,8 @@ namespace Integrity.Banking.Tests
         [Fact]
         public async Task CloseAccountWithNonZeroBalance_ReturnSucceededFalse()
         {
-            var bankingService = new BankingService(repository);
+            var logger = TestLoggerFactory.CreateLogger();
+            var bankingService = new BankingService(dbConfig, repository, logger);
 
             var closeAccountRequest = new CloseAccountRequest
             {
@@ -50,8 +50,8 @@ namespace Integrity.Banking.Tests
 
             var expectedResponse = new CloseAccountResponse
             {
-                CustomerId = 0,
-                AccountId = 0,
+                CustomerId = 1,
+                AccountId = 1,
                 Succeeded = false,
             };
 
@@ -65,7 +65,8 @@ namespace Integrity.Banking.Tests
         [Fact]
         public async Task CloseValidAccount_ReturnAccountNotDeleted()
         {
-            var bankingService = new BankingService(repository);
+            var logger = TestLoggerFactory.CreateLogger();
+            var bankingService = new BankingService(dbConfig, repository, logger);
 
             var closeAccountRequest = new CloseAccountRequest
             {

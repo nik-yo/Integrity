@@ -7,5 +7,7 @@
         public List<Customer> Customers { get; set; } = [];
         public AccountType AccountTypeId { get; set; }
         public bool Closed { get; set; }
+
+        public List<Transaction> Transactions { get; set; } = [];
     }
 }

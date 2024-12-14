@@ -8,7 +8,7 @@ namespace Integrity.Banking.Domain.Repositories
         public Task<Customer?> GetCustomerAsync(int customerId);
         public Task<Account?> GetCustomerAccountAsync(int customerId, int accountId);
 
-        public Task<Account?> UpdateAccountBalanceAsync(int customerId, int accountId, decimal balance);
+        public Task<Account?> SaveTransactionAsync(int customerId, int accountId, Guid transactionId, decimal amount);
 
         public Task<Account?> MarkAccountAsClosedAsync(int customerId, int accountId);
         

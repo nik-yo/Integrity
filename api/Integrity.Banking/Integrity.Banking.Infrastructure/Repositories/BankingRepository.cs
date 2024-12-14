@@ -18,13 +18,32 @@ namespace Integrity.Banking.Infrastructure.Repositories
             return await dbContext.Accounts.FirstOrDefaultAsync(a => a.Id == accountId && a.Customers.Count(u => u.Id == customerId) > 0 && !a.Closed);
         }
 
-        public async Task<Account?> UpdateAccountBalanceAsync(int customerId, int accountId, decimal balance)
+        public async Task<Account?> SaveTransactionAsync(int customerId, int accountId, Guid transactionId, decimal amount)
         {
             var customerAccount = await GetCustomerAccountAsync(customerId, accountId);
             if (customerAccount != null)
             {
-                customerAccount.Balance = balance;
-                await dbContext.SaveChangesAsync();
+                var accountTransaction = dbContext.Transactions.FirstOrDefault(t => t.Id == transactionId);
+                if (accountTransaction == null)
+                {
+                    dbContext.Transactions.Add(new Transaction
+                    {
+                        Id = transactionId,
+                        Timestamp = DateTimeOffset.UtcNow,
+                        Amount = amount,
+                        AccountId = customerAccount.Id,
+                        Account = customerAccount,
+                    });
+
+                    customerAccount.Balance += amount;
+
+                    // https://learn.microsoft.com/en-us/ef/core/saving/transactions#default-transaction-behavior
+                    await dbContext.SaveChangesAsync();
+                }
+                else if (accountTransaction.AccountId != customerAccount.Id)
+                {
+                    throw new InvalidOperationException("Invalid account id");
+                }
             }
             return customerAccount;
         }
@@ -48,7 +67,7 @@ namespace Integrity.Banking.Infrastructure.Repositories
                 var newAccount = new Account
                 {
                     Balance = balance,
-                    AccountTypeId = accountTypeId
+                    AccountTypeId = accountTypeId,
                 };
                 customer.Accounts.Add(newAccount);
                 await dbContext.SaveChangesAsync();

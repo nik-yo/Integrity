@@ -1,16 +1,19 @@
 ﻿using Integrity.Banking.Application;
 using Integrity.Banking.Domain.Models;
+using Integrity.Banking.Domain.Models.Config;
 
 namespace Integrity.Banking.Tests
 {
     public class OpenAccountUnitTest
     {
         private readonly TestRepository repository = new();
+        private readonly DbConfig dbConfig = new();
 
         [Fact]
         public async Task OpenAccountWithInvalidCustomer_ReturnSucceededFalse()
         {
-            var bankingService = new BankingService(repository);
+            var logger = TestLoggerFactory.CreateLogger();
+            var bankingService = new BankingService(dbConfig, repository, logger);
 
             var openAccountRequest = new OpenAccountRequest
             {
@@ -38,7 +41,8 @@ namespace Integrity.Banking.Tests
         [Fact]
         public async Task OpenAccountWithLessThan100_ReturnSucceededFalse()
         {
-            var bankingService = new BankingService(repository);
+            var logger = TestLoggerFactory.CreateLogger();
+            var bankingService = new BankingService(dbConfig, repository, logger);
 
             var openAccountRequest = new OpenAccountRequest
             {
@@ -66,7 +70,8 @@ namespace Integrity.Banking.Tests
         [Fact]
         public async Task OpenFirstCheckingAccount_ReturnSucceededFalse()
         {
-            var bankingService = new BankingService(repository);
+            var logger = TestLoggerFactory.CreateLogger();
+            var bankingService = new BankingService(dbConfig, repository, logger);
 
             var openAccountRequest = new OpenAccountRequest
             {
@@ -94,7 +99,8 @@ namespace Integrity.Banking.Tests
         [Fact]
         public async Task OpenFirstSavingsAccount_ReturnSucceededTrue()
         {
-            var bankingService = new BankingService(repository);
+            var logger = TestLoggerFactory.CreateLogger();
+            var bankingService = new BankingService(dbConfig, repository, logger);
 
             var openAccountRequest = new OpenAccountRequest
             {
@@ -122,7 +128,8 @@ namespace Integrity.Banking.Tests
         [Fact]
         public async Task OpenSecondAccount_ReturnSucceededTrue()
         {
-            var bankingService = new BankingService(repository);
+            var logger = TestLoggerFactory.CreateLogger();
+            var bankingService = new BankingService(dbConfig, repository, logger);
 
             var openAccountRequest = new OpenAccountRequest
             {

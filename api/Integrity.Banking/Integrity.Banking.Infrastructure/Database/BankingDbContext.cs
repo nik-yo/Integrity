@@ -11,9 +11,10 @@ namespace Integrity.Banking.Infrastructure.Database
     /// </summary>
     public class BankingDbContext : DbContext
     {
-        private DbConfig _dbConfig;
+        private readonly DbConfig _dbConfig;
         public DbSet<Customer> Customers { get; set; }
         public DbSet<Account> Accounts { get; set; }
+        public DbSet<Transaction> Transactions { get; set; }
 
         public BankingDbContext() //For EF migration
         {
@@ -25,15 +26,10 @@ namespace Integrity.Banking.Infrastructure.Database
             _dbConfig = dbConfig;
         }
 
-        public BankingDbContext(MySqlDataSource mysqlDataSource) //For .NET Aspire
-        {
-            _dbConfig = new DbConfig();
-            _dbConfig.ConnectionString = mysqlDataSource.ConnectionString;
-        }
-
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseMySQL(_dbConfig.ConnectionString);
+            optionsBuilder.UseMySQL(_dbConfig.ConnectionString, 
+                            options => options.EnableRetryOnFailure());
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

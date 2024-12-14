@@ -1,5 +1,6 @@
 using Integrity.Banking.Application;
 using Integrity.Banking.Domain.Models;
+using Integrity.Banking.Domain.Models.Config;
 using Integrity.Banking.Domain.Repositories;
 using Integrity.Banking.Infrastructure.Database;
 using Integrity.Banking.Infrastructure.Repositories;
@@ -12,7 +13,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 //builder.AddServiceDefaults();
 
-builder.AddMySqlDataSource("mysqldb"); // .NET Aspire
+//builder.AddMySqlDataSource("mysqldb"); // .NET Aspire
+
+var dbConfig = builder.Configuration.GetSection("Database").Get<DbConfig>() ?? new();
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -33,6 +36,7 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services
+    .AddSingleton(dbConfig)
     .AddDbContext<BankingDbContext>()
     .AddScoped<IBankingRepository, BankingRepository>()
     .AddTransient<BankingService>();

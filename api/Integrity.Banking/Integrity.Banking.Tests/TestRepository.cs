@@ -4,7 +4,7 @@ using Integrity.Banking.Domain.Repositories;
 
 namespace Integrity.Banking.Tests
 {
-    public class TestRepository : IBankingRepository
+    internal class TestRepository : IBankingRepository
     {
         private readonly Customer _customer = new Customer()
         {
@@ -20,7 +20,7 @@ namespace Integrity.Banking.Tests
         {
             Id = 1,
             AccountTypeId = AccountType.Savings,
-            Balance = 100m
+            Balance = 100m,
         };
 
         private readonly Account _secondAccount = new Account()
@@ -32,6 +32,7 @@ namespace Integrity.Banking.Tests
 
         public List<Account> Accounts { get; set; } = [];
         private List<Customer> Customers { get; set; } = [];
+        private List<Transaction> Transactions { get; set; } = [];
 
         private List<Tuple<Customer, Account>> _xref = [];
 
@@ -61,12 +62,29 @@ namespace Integrity.Banking.Tests
             return _xref.FirstOrDefault(x => x.Item1.Id == customerId && x.Item2.Id == accountId && !x.Item2.Closed)?.Item2;
         }
 
-        public async Task<Account?> UpdateAccountBalanceAsync(int customerId, int accountId, decimal balance)
+        public async Task<Account?> SaveTransactionAsync(int customerId, int accountId, Guid transactionId, decimal amount)
         {
             var customerAccount = await GetCustomerAccountAsync(customerId, accountId);
             if (customerAccount != null)
             {
-                customerAccount.Balance = balance;
+                var accountTransaction = Transactions.FirstOrDefault(t => t.Id == transactionId);
+                if (accountTransaction == null)
+                {
+                    Transactions.Add(new Transaction
+                    {
+                        Id = transactionId,
+                        Timestamp = DateTimeOffset.UtcNow,
+                        Amount = amount,
+                        AccountId = customerAccount.Id,
+                        Account = customerAccount,
+                    });
+
+                    customerAccount.Balance += amount;
+                }
+                else if (accountTransaction.AccountId != customerAccount.Id)
+                {
+                    throw new InvalidOperationException("Invalid account id");
+                }                
             }
             return customerAccount;
         }
