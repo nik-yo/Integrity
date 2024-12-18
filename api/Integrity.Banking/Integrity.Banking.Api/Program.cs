@@ -1,9 +1,11 @@
+using Integrity.Banking.Api;
 using Integrity.Banking.Application;
 using Integrity.Banking.Domain.Models;
 using Integrity.Banking.Domain.Models.Config;
 using Integrity.Banking.Domain.Repositories;
 using Integrity.Banking.Infrastructure.Database;
 using Integrity.Banking.Infrastructure.Repositories;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Scalar.AspNetCore;
 
@@ -16,6 +18,7 @@ var builder = WebApplication.CreateBuilder(args);
 //builder.AddMySqlDataSource("mysqldb"); // .NET Aspire
 
 var dbConfig = builder.Configuration.GetSection("Database").Get<DbConfig>() ?? new();
+var authzConfig = builder.Configuration.GetSection("Authorization").Get<AuthzConfig>() ?? new();
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -34,6 +37,15 @@ builder.Services.AddCors(options =>
                                 .AllowCredentials();
                       });
 });
+
+builder.Services
+    .AddAuthorization(options =>
+    {
+        options.AddPolicy(policyName, policy => policy.Requirements.Add(new ApiKeyRequirement()));
+    })
+    .AddHttpContextAccessor()
+    .AddSingleton(authzConfig)
+    .AddSingleton<IAuthorizationHandler, ApiKeyAuthorizationHandler>();
 
 builder.Services
     .AddSingleton(dbConfig)
@@ -55,6 +67,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseAuthorization();
+
 app.MapPost("/deposit", async Task<Results<BadRequest<TransactionResponse>, Ok<TransactionResponse>>>(TransactionRequest request) =>
 {
     using var scope = app.Services.CreateScope();
@@ -68,7 +82,7 @@ app.MapPost("/deposit", async Task<Results<BadRequest<TransactionResponse>, Ok<T
     }
 
     return TypedResults.BadRequest(response);
-});
+}).RequireAuthorization(policyName);
 
 app.MapPost("/withdrawal", async Task<Results<BadRequest<TransactionResponse>, Ok<TransactionResponse>>> (TransactionRequest request) =>
 {
