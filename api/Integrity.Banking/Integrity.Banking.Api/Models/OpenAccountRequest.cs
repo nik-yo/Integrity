@@ -1,4 +1,6 @@
-﻿namespace Integrity.Banking.Domain.Models
+﻿using Integrity.Banking.Domain.Models;
+
+namespace Integrity.Banking.Api.Models
 {
     public class OpenAccountRequest
     {

@@ -39,6 +39,9 @@ namespace Integrity.Banking.Infrastructure.Database
             modelBuilder.Entity<Customer>()
                 .HasMany(e => e.Accounts)
                 .WithMany(e => e.Customers);
+
+
+
         }
     }
 }

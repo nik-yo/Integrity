@@ -5,11 +5,11 @@ namespace Integrity.Banking.Tests
 {
     internal class TestLoggerFactory
     {
-        public static ILogger<BankingService> CreateLogger()
+        public static ILogger<DepositService> CreateLogger()
         {
             using var loggerFactory = LoggerFactory.Create(configure => configure
                 .SetMinimumLevel(LogLevel.Debug));
-            return loggerFactory.CreateLogger<BankingService>();
+            return loggerFactory.CreateLogger<DepositService>();
         }
     }
 }

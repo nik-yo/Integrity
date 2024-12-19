@@ -1,5 +1,7 @@
 using Integrity.Banking.Api;
+using Integrity.Banking.Api.Models;
 using Integrity.Banking.Application;
+using Integrity.Banking.Domain;
 using Integrity.Banking.Domain.Models;
 using Integrity.Banking.Domain.Models.Config;
 using Integrity.Banking.Domain.Repositories;
@@ -51,7 +53,12 @@ builder.Services
     .AddSingleton(dbConfig)
     .AddDbContext<BankingDbContext>()
     .AddScoped<IBankingRepository, BankingRepository>()
-    .AddTransient<BankingService>();
+    .AddTransient<DepositHandler>()
+    .AddTransient<WithdrawalHandler>()
+    .AddTransient<AccountHandler>()
+    .AddTransient<DepositService>()
+    .AddTransient<WithdrawalService>()
+    .AddTransient<AccountService>();
 
 var app = builder.Build();
 
@@ -72,12 +79,24 @@ app.UseAuthorization();
 app.MapPost("/deposit", async Task<Results<BadRequest<TransactionResponse>, Ok<TransactionResponse>>>(TransactionRequest request) =>
 {
     using var scope = app.Services.CreateScope();
-    var bankingService = scope.ServiceProvider.GetRequiredService<BankingService>();
+    var bankingService = scope.ServiceProvider.GetRequiredService<DepositService>();
 
-    var response = await bankingService.MakeDepositAsync(request);
-
-    if (response.Succeeded)
+    var data = await bankingService.ProcessDepositAsync(new TransactionData
     {
+        AccountId = request.AccountId,
+        Amount = request.Amount,
+        CustomerId = request.CustomerId
+    });
+
+    var response = new TransactionResponse();
+
+    if (data != null)
+    {
+        response.CustomerId = data.CustomerId;
+        response.AccountId = data.AccountId;
+        response.Balance = data.Amount;
+        response.Succeeded = true;
+
         return TypedResults.Ok(response);
     }
 
@@ -87,12 +106,24 @@ app.MapPost("/deposit", async Task<Results<BadRequest<TransactionResponse>, Ok<T
 app.MapPost("/withdrawal", async Task<Results<BadRequest<TransactionResponse>, Ok<TransactionResponse>>> (TransactionRequest request) =>
 {
     using var scope = app.Services.CreateScope();
-    var bankingService = scope.ServiceProvider.GetRequiredService<BankingService>();
+    var bankingService = scope.ServiceProvider.GetRequiredService<WithdrawalService>();
 
-    var response = await bankingService.MakeWithdrawalAsync(request);
-
-    if (response.Succeeded)
+    var data = await bankingService.ProcessWithdrawalAsync(new TransactionData
     {
+        AccountId = request.AccountId,
+        Amount = request.Amount,
+        CustomerId = request.CustomerId
+    });
+
+    var response = new TransactionResponse();
+
+    if (data != null)
+    {
+        response.CustomerId = data.CustomerId;
+        response.AccountId = data.AccountId;
+        response.Balance = data.Amount;
+        response.Succeeded = true;
+
         return TypedResults.Ok(response);
     }
 
@@ -102,12 +133,22 @@ app.MapPost("/withdrawal", async Task<Results<BadRequest<TransactionResponse>, O
 app.MapPost("/close-account", async Task<Results<BadRequest<CloseAccountResponse>, Ok<CloseAccountResponse>>> (CloseAccountRequest request) =>
 {
     using var scope = app.Services.CreateScope();
-    var bankingService = scope.ServiceProvider.GetRequiredService<BankingService>();
+    var bankingService = scope.ServiceProvider.GetRequiredService<AccountService>();
 
-    var response = await bankingService.CloseAccountAsync(request);
-
-    if (response.Succeeded)
+    var data = await bankingService.ProcessCloseAccountAsync(new CloseAccountData
     {
+        CustomerId = request.CustomerId,
+        AccountId  = request.AccountId,
+    });
+
+    var response = new CloseAccountResponse();
+
+    if (data != null)
+    {
+        response.AccountId = data.AccountId;
+        response.CustomerId = data.CustomerId;
+        response.Succeeded = true;
+
         return TypedResults.Ok(response);
     }
 
@@ -117,12 +158,24 @@ app.MapPost("/close-account", async Task<Results<BadRequest<CloseAccountResponse
 app.MapPost("/open-account", async Task<Results<BadRequest<OpenAccountResponse>, Ok<OpenAccountResponse>>> (OpenAccountRequest request) =>
 {
     using var scope = app.Services.CreateScope();
-    var bankingService = scope.ServiceProvider.GetRequiredService<BankingService>();
+    var bankingService = scope.ServiceProvider.GetRequiredService<AccountService>();
 
-    var response = await bankingService.OpenAccountAsync(request);
-
-    if (response.Succeeded)
+    var data = await bankingService.ProcessOpenAccountAsync(new OpenAccountData
     {
+        CustomerId = request.CustomerId,
+        AccountTypeId = request.AccountTypeId,
+        Amount = request.InitialDeposit
+    });
+
+    var response = new OpenAccountResponse();
+
+    if (data != null)
+    {
+        response.CustomerId = data.CustomerId;
+        response.AccountTypeId = data.AccountTypeId;
+        response.Balance = data.Amount;
+        response.Succeeded = true;
+
         return TypedResults.Ok(response);
     }
 

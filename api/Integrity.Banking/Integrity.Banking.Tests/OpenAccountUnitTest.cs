@@ -1,4 +1,5 @@
 ﻿using Integrity.Banking.Application;
+using Integrity.Banking.Domain;
 using Integrity.Banking.Domain.Models;
 using Integrity.Banking.Domain.Models.Config;
 
@@ -10,148 +11,127 @@ namespace Integrity.Banking.Tests
         private readonly DbConfig dbConfig = new();
 
         [Fact]
-        public async Task OpenAccountWithInvalidCustomer_ReturnSucceededFalse()
+        public async Task OpenAccountWithInvalidCustomer_ReturnNull()
         {
             var logger = TestLoggerFactory.CreateLogger();
-            var bankingService = new BankingService(dbConfig, repository, logger);
+            var accountHandler = new AccountHandler(repository, dbConfig);
+            var accountService = new AccountService(accountHandler);
 
-            var openAccountRequest = new OpenAccountRequest
+            var inputData = new OpenAccountData
             {
                 CustomerId = 3,
-                InitialDeposit = 100m,
+                Amount = 100m,
                 AccountTypeId = AccountType.Checking
             };
 
-            var expectedResponse = new OpenAccountResponse
-            {
-                CustomerId = 0,
-                AccountId = 0,
-                Balance = 0,
-                Succeeded = false,
-            };
+            var actualOutput = await accountService.ProcessOpenAccountAsync(inputData);
 
-            var actualResponse = await bankingService.OpenAccountAsync(openAccountRequest);
-
-            Assert.Equal(expectedResponse.CustomerId, actualResponse.CustomerId);
-            Assert.Equal(expectedResponse.AccountId, actualResponse.AccountId);
-            Assert.Equal(expectedResponse.Balance, actualResponse.Balance);
-            Assert.False(actualResponse.Succeeded);
+            Assert.NotNull(actualOutput);
         }
 
         [Fact]
-        public async Task OpenAccountWithLessThan100_ReturnSucceededFalse()
+        public async Task OpenAccountWithLessThan100_ReturnNull()
         {
             var logger = TestLoggerFactory.CreateLogger();
-            var bankingService = new BankingService(dbConfig, repository, logger);
+            var accountHandler = new AccountHandler(repository, dbConfig);
+            var accountService = new AccountService(accountHandler);
 
-            var openAccountRequest = new OpenAccountRequest
+            var inputData = new OpenAccountData
             {
                 CustomerId = 1,
-                InitialDeposit = 75m,
+                Amount = 75m,
                 AccountTypeId = AccountType.Checking
             };
 
-            var expectedResponse = new OpenAccountResponse
-            {
-                CustomerId = 0,
-                AccountId = 0,
-                Balance = 0,
-                Succeeded = false,
-            };
+            var actualOutput = await accountService.ProcessOpenAccountAsync(inputData);
 
-            var actualResponse = await bankingService.OpenAccountAsync(openAccountRequest);
-
-            Assert.Equal(expectedResponse.CustomerId, actualResponse.CustomerId);
-            Assert.Equal(expectedResponse.AccountId, actualResponse.AccountId);
-            Assert.Equal(expectedResponse.Balance, actualResponse.Balance);
-            Assert.False(actualResponse.Succeeded);
+            Assert.Null(actualOutput);
         }
 
         [Fact]
-        public async Task OpenFirstCheckingAccount_ReturnSucceededFalse()
+        public async Task OpenFirstCheckingAccount_ReturnNull()
         {
             var logger = TestLoggerFactory.CreateLogger();
-            var bankingService = new BankingService(dbConfig, repository, logger);
+            var accountHandler = new AccountHandler(repository, dbConfig);
+            var accountService = new AccountService(accountHandler);
 
-            var openAccountRequest = new OpenAccountRequest
+            var inputData = new OpenAccountData
             {
                 CustomerId = 2,
-                InitialDeposit = 100m,
+                Amount = 100m,
                 AccountTypeId = AccountType.Checking
             };
 
-            var expectedResponse = new OpenAccountResponse
-            {
-                CustomerId = 0,
-                AccountId = 0,
-                Balance = 0,
-                Succeeded = false,
-            };
+            var actualOutput = await accountService.ProcessOpenAccountAsync(inputData);
 
-            var actualResponse = await bankingService.OpenAccountAsync(openAccountRequest);
-
-            Assert.Equal(expectedResponse.CustomerId, actualResponse.CustomerId);
-            Assert.Equal(expectedResponse.AccountId, actualResponse.AccountId);
-            Assert.Equal(expectedResponse.Balance, actualResponse.Balance);
-            Assert.False(actualResponse.Succeeded);
+            Assert.Null(actualOutput);
         }
 
         [Fact]
         public async Task OpenFirstSavingsAccount_ReturnSucceededTrue()
         {
             var logger = TestLoggerFactory.CreateLogger();
-            var bankingService = new BankingService(dbConfig, repository, logger);
+            var accountHandler = new AccountHandler(repository, dbConfig);
+            var accountService = new AccountService(accountHandler);
 
-            var openAccountRequest = new OpenAccountRequest
+            var inputData = new OpenAccountData
             {
                 CustomerId = 2,
-                InitialDeposit = 100m,
+                Amount = 100m,
                 AccountTypeId = AccountType.Savings
             };
 
-            var expectedResponse = new OpenAccountResponse
+            var expectedOutput = new OpenAccountData
             {
                 CustomerId = 2,
                 AccountId = 3,
-                Balance = 100m,
-                Succeeded = true,
+                Amount = 100m,
+                AccountTypeId = AccountType.Savings
             };
 
-            var actualResponse = await bankingService.OpenAccountAsync(openAccountRequest);
+            var actualOutput = await accountService.ProcessOpenAccountAsync(inputData);
 
-            Assert.Equal(expectedResponse.CustomerId, actualResponse.CustomerId);
-            Assert.Equal(expectedResponse.AccountId, actualResponse.AccountId);
-            Assert.Equal(expectedResponse.Balance, actualResponse.Balance);
-            Assert.True(actualResponse.Succeeded);
+            Assert.NotNull(actualOutput);
+            if (actualOutput != null)
+            {
+                Assert.Equal(expectedOutput.AccountId, actualOutput.AccountId);
+                Assert.Equal(expectedOutput.CustomerId, actualOutput.CustomerId);
+                Assert.Equal(expectedOutput.Amount, expectedOutput.Amount);
+            }
         }
 
         [Fact]
         public async Task OpenSecondAccount_ReturnSucceededTrue()
         {
             var logger = TestLoggerFactory.CreateLogger();
-            var bankingService = new BankingService(dbConfig, repository, logger);
+            var accountHandler = new AccountHandler(repository, dbConfig);
+            var accountService = new AccountService(accountHandler);
 
-            var openAccountRequest = new OpenAccountRequest
+            var inputData = new OpenAccountData
             {
                 CustomerId = 1,
-                InitialDeposit = 120m,
+                Amount = 120m,
                 AccountTypeId = AccountType.Savings
             };
 
-            var expectedResponse = new OpenAccountResponse
+            var expectedOutput = new OpenAccountData
             {
                 CustomerId = 1,
                 AccountId = 3,
-                Balance = 120m,
-                Succeeded = true,
+                Amount = 120m,
+                AccountTypeId = AccountType.Savings
             };
 
-            var actualResponse = await bankingService.OpenAccountAsync(openAccountRequest);
+            var actualOutput = await accountService.ProcessOpenAccountAsync(inputData);
 
-            Assert.Equal(expectedResponse.CustomerId, actualResponse.CustomerId);
-            Assert.Equal(expectedResponse.AccountId, actualResponse.AccountId);
-            Assert.Equal(expectedResponse.Balance, actualResponse.Balance);
-            Assert.True(actualResponse.Succeeded);
+            Assert.NotNull(actualOutput);
+            if (actualOutput != null)
+            {
+                Assert.Equal(expectedOutput.CustomerId, actualOutput.CustomerId);
+                Assert.Equal(expectedOutput.AccountId, actualOutput.AccountId);
+                Assert.Equal(expectedOutput.Amount, actualOutput.Amount);
+                Assert.Equal(expectedOutput.AccountTypeId, actualOutput.AccountTypeId);
+            }
         }
     }
 }

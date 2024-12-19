@@ -1,4 +1,5 @@
 ﻿using Integrity.Banking.Application;
+using Integrity.Banking.Domain;
 using Integrity.Banking.Domain.Models;
 using Integrity.Banking.Domain.Models.Config;
 using Microsoft.Extensions.Logging;
@@ -14,147 +15,123 @@ namespace Integrity.Banking.Tests
         public async Task MakeValidDeposit_ReturnBalanceAdded()
         {
             var logger = TestLoggerFactory.CreateLogger();
-            var bankingService = new BankingService(dbConfig, repository, logger);
+            var depositHandler = new DepositHandler(repository, dbConfig);
+            var depositService = new DepositService(depositHandler);
 
-            var transactionRequest = new TransactionRequest
+            var inputData = new TransactionData
             {
                 CustomerId = 1,
                 AccountId = 1,
                 Amount = 10
             };
 
-            var expectedResponse = new TransactionResponse
+            var expectedOutput = new TransactionData
             {
                 CustomerId = 1,
                 AccountId = 1,
-                Balance = 110,
-                Succeeded = true,
+                Amount = 110
             };
 
-            var actualResponse = await bankingService.MakeDepositAsync(transactionRequest);
+            var actualOutput = await depositService.ProcessDepositAsync(inputData);
 
-            Assert.Equal(expectedResponse.CustomerId, actualResponse.CustomerId); //Customer exists
-            Assert.Equal(expectedResponse.AccountId, actualResponse.AccountId); //Account exists
-            Assert.Equal(expectedResponse.Balance, actualResponse.Balance);
-            Assert.True(actualResponse.Succeeded);
+            Assert.NotNull(actualOutput);
+            if (actualOutput != null)
+            {
+                Assert.Equal(expectedOutput.CustomerId, actualOutput.CustomerId);
+                Assert.Equal(expectedOutput.AccountId, actualOutput.AccountId);
+                Assert.Equal(expectedOutput.Amount, actualOutput.Amount);
+            }
         }
 
         [Fact]
-        public async Task MakeDepositWithInvalidCustomer_ReturnFailed()
+        public async Task MakeDepositWithInvalidCustomer_ReturnNull()
         {
             var logger = TestLoggerFactory.CreateLogger();
-            var bankingService = new BankingService(dbConfig, repository, logger);
+            var depositHandler = new DepositHandler(repository, dbConfig);
+            var depositService = new DepositService(depositHandler);
 
-            var transactionRequest = new TransactionRequest
+            var inputData = new TransactionData
             {
                 CustomerId = 3,
                 AccountId = 1,
                 Amount = 10
             };
 
-            var expectedResponse = new TransactionResponse
-            {
-                CustomerId = 0,
-                AccountId = 0,
-                Balance = 0,
-                Succeeded = false,
-            };
+            var actualOutput = await depositService.ProcessDepositAsync(inputData);
 
-            var actualResponse = await bankingService.MakeDepositAsync(transactionRequest);
-
-            Assert.Equal(expectedResponse.CustomerId, actualResponse.CustomerId);
-            Assert.Equal(expectedResponse.AccountId, actualResponse.AccountId);
-            Assert.Equal(expectedResponse.Balance, actualResponse.Balance);
-            Assert.False(actualResponse.Succeeded);
+            Assert.Null(actualOutput);
         }
 
         [Fact]
-        public async Task MakeDepositWithInvalidAccount_ReturnFailed()
+        public async Task MakeDepositWithInvalidAccount_ReturnNull()
         {
             var logger = TestLoggerFactory.CreateLogger();
-            var bankingService = new BankingService(dbConfig, repository, logger);
+            var depositHandler = new DepositHandler(repository, dbConfig);
+            var depositService = new DepositService(depositHandler);
 
-            var transactionRequest = new TransactionRequest
+            var inputData = new TransactionData
             {
                 CustomerId = 1,
                 AccountId = 3,
                 Amount = 10
             };
 
-            var expectedResponse = new TransactionResponse
-            {
-                CustomerId = 0,
-                AccountId = 0,
-                Balance = 0,
-                Succeeded = false,
-            };
+            var actualOutput = await depositService.ProcessDepositAsync(inputData);
 
-            var actualResponse = await bankingService.MakeDepositAsync(transactionRequest);
-
-            Assert.Equal(expectedResponse.CustomerId, actualResponse.CustomerId);
-            Assert.Equal(expectedResponse.AccountId, actualResponse.AccountId);
-            Assert.Equal(expectedResponse.Balance, actualResponse.Balance);
-            Assert.False(actualResponse.Succeeded);
+            Assert.Null(actualOutput);
         }
 
         [Fact]
-        public async Task MakeDepositWithZeroAmount_ReturnFailed()
+        public async Task MakeDepositWithZeroAmount_ReturnNull()
         {
             var logger = TestLoggerFactory.CreateLogger();
-            var bankingService = new BankingService(dbConfig, repository, logger);
+            var depositHandler = new DepositHandler(repository, dbConfig);
+            var depositService = new DepositService(depositHandler);
 
-            var transactionRequest = new TransactionRequest
+            var inputData = new TransactionData
             {
                 CustomerId = 1,
                 AccountId = 1,
                 Amount = 0
             };
 
-            var expectedResponse = new TransactionResponse
-            {
-                CustomerId = 0,
-                AccountId = 0,
-                Balance = 0,
-                Succeeded = false,
-            };
+            var actualOutput = await depositService.ProcessDepositAsync(inputData);
 
-            var actualResponse = await bankingService.MakeDepositAsync(transactionRequest);
-
-            Assert.Equal(expectedResponse.CustomerId, actualResponse.CustomerId);
-            Assert.Equal(expectedResponse.AccountId, actualResponse.AccountId);
-            Assert.Equal(expectedResponse.Balance, actualResponse.Balance);
-            Assert.False(actualResponse.Succeeded);
+            Assert.Null(actualOutput);
         }
 
         [Fact]
         public async Task MakeDuplicateDeposits_ReturnCorrectBalance()
         {
             var logger = TestLoggerFactory.CreateLogger();
-            var bankingService = new BankingService(dbConfig, repository, logger);
+            var depositHandler = new DepositHandler(repository, dbConfig);
+            var depositService = new DepositService(depositHandler);
 
-            var transactionRequest = new TransactionRequest
+            var inputData = new TransactionData
             {
                 CustomerId = 1,
                 AccountId = 1,
                 Amount = 10
             };
 
-            var expectedResponse = new TransactionResponse
+            var expectedOutput = new TransactionData
             {
                 CustomerId = 1,
                 AccountId = 1,
-                Balance = 110,
-                Succeeded = true,
+                Amount = 110
             };
 
-            await bankingService.MakeDepositAsync(transactionRequest);
+            await depositService.ProcessDepositAsync(inputData);
 
-            var actualResponse = await bankingService.MakeDepositAsync(transactionRequest);
+            var actualOutput = await depositService.ProcessDepositAsync(inputData);
 
-            Assert.Equal(expectedResponse.CustomerId, actualResponse.CustomerId);
-            Assert.Equal(expectedResponse.AccountId, actualResponse.AccountId);
-            Assert.Equal(expectedResponse.Balance, actualResponse.Balance);
-            Assert.True(actualResponse.Succeeded);
+            Assert.NotNull(actualOutput);
+            if (actualOutput != null)
+            {
+                Assert.Equal(expectedOutput.CustomerId, actualOutput.CustomerId);
+                Assert.Equal(expectedOutput.AccountId, actualOutput.AccountId);
+                Assert.Equal(expectedOutput.Amount, actualOutput.Amount);
+            }
         }
     }
 }

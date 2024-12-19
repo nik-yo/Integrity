@@ -1,4 +1,5 @@
 ﻿using Integrity.Banking.Application;
+using Integrity.Banking.Domain;
 using Integrity.Banking.Domain.Models;
 using Integrity.Banking.Domain.Models.Config;
 
@@ -13,176 +14,142 @@ namespace Integrity.Banking.Tests
         public async Task MakeValidWithdrawal_ReturnBalanceSubtracted()
         {
             var logger = TestLoggerFactory.CreateLogger();
-            var bankingService = new BankingService(dbConfig, repository, logger);
+            var withdrawalHandler = new WithdrawalHandler(repository, dbConfig);
+            var withdrawalService = new WithdrawalService(withdrawalHandler);
 
-            var transactionRequest = new TransactionRequest
+            var inputData = new TransactionData
             {
                 CustomerId = 1,
                 AccountId = 1,
                 Amount = 10
             };
 
-            var expectedResponse = new TransactionResponse
+            var expectedOutput = new TransactionData
             {
                 CustomerId = 1,
                 AccountId = 1,
-                Balance = 90,
-                Succeeded = true,
+                Amount = 90
             };
 
-            var actualResponse = await bankingService.MakeWithdrawalAsync(transactionRequest);
+            var actualOutput = await withdrawalService.ProcessWithdrawalAsync(inputData);
 
-            Assert.Equal(expectedResponse.CustomerId, actualResponse.CustomerId); //Customer exists
-            Assert.Equal(expectedResponse.AccountId, actualResponse.AccountId); //Account exists
-            Assert.Equal(expectedResponse.Balance, actualResponse.Balance);
-            Assert.True(actualResponse.Succeeded);
+            Assert.NotNull(actualOutput);
+            if (actualOutput != null)
+            {
+                Assert.Equal(expectedOutput.CustomerId, actualOutput.CustomerId);
+                Assert.Equal(expectedOutput.AccountId, actualOutput.AccountId);
+                Assert.Equal(expectedOutput.Amount, actualOutput.Amount);
+            }
         }
 
         [Fact]
-        public async Task MakeWithdrawalWithInvalidCustomer_ReturnFailed()
+        public async Task MakeWithdrawalWithInvalidCustomer_ReturnNull()
         {
             var logger = TestLoggerFactory.CreateLogger();
-            var bankingService = new BankingService(dbConfig, repository, logger);
+            var withdrawalHandler = new WithdrawalHandler(repository, dbConfig);
+            var withdrawalService = new WithdrawalService(withdrawalHandler);
 
-            var transactionRequest = new TransactionRequest
+            var inputData = new TransactionData
             {
                 CustomerId = 2,
                 AccountId = 1,
                 Amount = 10
             };
 
-            var expectedResponse = new TransactionResponse
-            {
-                CustomerId = 0,
-                AccountId = 0,
-                Balance = 0,
-                Succeeded = false,
-            };
+            var actualOutput = await withdrawalService.ProcessWithdrawalAsync(inputData);
 
-            var actualResponse = await bankingService.MakeWithdrawalAsync(transactionRequest);
-
-            Assert.Equal(expectedResponse.CustomerId, actualResponse.CustomerId);
-            Assert.Equal(expectedResponse.AccountId, actualResponse.AccountId);
-            Assert.Equal(expectedResponse.Balance, actualResponse.Balance);
-            Assert.False(actualResponse.Succeeded);
+            Assert.Null(actualOutput);
         }
 
         [Fact]
-        public async Task MakeWithdrawalWithInvalidAccount_ReturnFailed()
+        public async Task MakeWithdrawalWithInvalidAccount_ReturnNull()
         {
             var logger = TestLoggerFactory.CreateLogger();
-            var bankingService = new BankingService(dbConfig, repository, logger);
+            var withdrawalHandler = new WithdrawalHandler(repository, dbConfig);
+            var withdrawalService = new WithdrawalService(withdrawalHandler);
 
-            var transactionRequest = new TransactionRequest
+            var inputData = new TransactionData
             {
                 CustomerId = 1,
                 AccountId = 3,
                 Amount = 10
             };
 
-            var expectedResponse = new TransactionResponse
-            {
-                CustomerId = 0,
-                AccountId = 0,
-                Balance = 0,
-                Succeeded = false,
-            };
+            var actualOutput = await withdrawalService.ProcessWithdrawalAsync(inputData);
 
-            var actualResponse = await bankingService.MakeWithdrawalAsync(transactionRequest);
-
-            Assert.Equal(expectedResponse.CustomerId, actualResponse.CustomerId);
-            Assert.Equal(expectedResponse.AccountId, actualResponse.AccountId);
-            Assert.Equal(expectedResponse.Balance, actualResponse.Balance);
-            Assert.False(actualResponse.Succeeded);
+            Assert.Null(actualOutput);
         }
 
         [Fact]
-        public async Task MakeWithdrawalWithZeroAmount_ReturnFailed()
+        public async Task MakeWithdrawalWithZeroAmount_ReturnNull()
         {
             var logger = TestLoggerFactory.CreateLogger();
-            var bankingService = new BankingService(dbConfig, repository, logger);
+            var withdrawalHandler = new WithdrawalHandler(repository, dbConfig);
+            var withdrawalService = new WithdrawalService(withdrawalHandler);
 
-            var transactionRequest = new TransactionRequest
+            var inputData = new TransactionData
             {
                 CustomerId = 1,
                 AccountId = 1,
                 Amount = 0
             };
 
-            var expectedResponse = new TransactionResponse
-            {
-                CustomerId = 0,
-                AccountId = 0,
-                Balance = 0,
-                Succeeded = false,
-            };
+            var actualOutput = await withdrawalService.ProcessWithdrawalAsync(inputData);
 
-            var actualResponse = await bankingService.MakeWithdrawalAsync(transactionRequest);
-
-            Assert.Equal(expectedResponse.CustomerId, actualResponse.CustomerId);
-            Assert.Equal(expectedResponse.AccountId, actualResponse.AccountId);
-            Assert.Equal(expectedResponse.Balance, actualResponse.Balance);
-            Assert.False(actualResponse.Succeeded);
+            Assert.Null(actualOutput);
         }
 
         [Fact]
-        public async Task MakeWithdrawalWithAmountMoreThanBalance_ReturnFailed()
+        public async Task MakeWithdrawalWithAmountMoreThanBalance_ReturnNull()
         {
             var logger = TestLoggerFactory.CreateLogger();
-            var bankingService = new BankingService(dbConfig, repository, logger);
+            var withdrawalHandler = new WithdrawalHandler(repository, dbConfig);
+            var withdrawalService = new WithdrawalService(withdrawalHandler);
 
-            var transactionRequest = new TransactionRequest
+            var inputData = new TransactionData
             {
                 CustomerId = 1,
                 AccountId = 1,
                 Amount = 150
             };
 
-            var expectedResponse = new TransactionResponse
-            {
-                CustomerId = 1,
-                AccountId = 1,
-                Balance = 100,
-                Succeeded = false,
-            };
+            var actualOutput = await withdrawalService.ProcessWithdrawalAsync(inputData);
 
-            var actualResponse = await bankingService.MakeWithdrawalAsync(transactionRequest);
-
-            Assert.Equal(expectedResponse.CustomerId, actualResponse.CustomerId);
-            Assert.Equal(expectedResponse.AccountId, actualResponse.AccountId);
-            Assert.Equal(expectedResponse.Balance, actualResponse.Balance);
-            Assert.False(actualResponse.Succeeded);
+            Assert.Null(actualOutput);
         }
 
         [Fact]
         public async Task MakeDuplicateWithdrawals_ReturnCorrectBalance()
         {
             var logger = TestLoggerFactory.CreateLogger();
-            var bankingService = new BankingService(dbConfig, repository, logger);
+            var withdrawalHandler = new WithdrawalHandler(repository, dbConfig);
+            var withdrawalService = new WithdrawalService(withdrawalHandler);
 
-            var transactionRequest = new TransactionRequest
+            var inputData = new TransactionData
             {
                 CustomerId = 1,
                 AccountId = 1,
                 Amount = 10
             };
 
-            var expectedResponse = new TransactionResponse
+            var expectedOutput = new TransactionData
             {
                 CustomerId = 1,
                 AccountId = 1,
-                Balance = 90,
-                Succeeded = true,
+                Amount = 90
             };
 
-            await bankingService.MakeWithdrawalAsync(transactionRequest);
+            await withdrawalService.ProcessWithdrawalAsync(inputData);
 
-            var actualResponse = await bankingService.MakeWithdrawalAsync(transactionRequest);
+            var actualOutput = await withdrawalService.ProcessWithdrawalAsync(inputData);
 
-            Assert.Equal(expectedResponse.CustomerId, actualResponse.CustomerId);
-            Assert.Equal(expectedResponse.AccountId, actualResponse.AccountId);
-            Assert.Equal(expectedResponse.Balance, actualResponse.Balance);
-            Assert.True(actualResponse.Succeeded);
+            Assert.NotNull(actualOutput);
+            if (actualOutput != null)
+            {
+                Assert.Equal(expectedOutput.CustomerId, actualOutput.CustomerId);
+                Assert.Equal(expectedOutput.AccountId, actualOutput.AccountId);
+                Assert.Equal(expectedOutput.Amount, actualOutput.Amount);
+            }
         }
     }
 }

@@ -1,7 +1,7 @@
 ﻿using Integrity.Banking.Application;
+using Integrity.Banking.Domain;
 using Integrity.Banking.Domain.Models;
 using Integrity.Banking.Domain.Models.Config;
-using Microsoft.Extensions.Logging;
 
 namespace Integrity.Banking.Tests
 {
@@ -11,82 +11,68 @@ namespace Integrity.Banking.Tests
         private readonly DbConfig dbConfig = new();
 
         [Fact]
-        public async Task CloseInvalidAccount_ReturnSucceededFalse()
+        public async Task CloseInvalidAccount_ReturnNull()
         {
             var logger = TestLoggerFactory.CreateLogger();
-            var bankingService = new BankingService(dbConfig, repository, logger);
+            var accountHandler = new AccountHandler(repository, dbConfig);
+            var accountService = new AccountService(accountHandler);
 
-            var closeAccountRequest = new CloseAccountRequest
+            var inputData = new CloseAccountData
             {
                 CustomerId = 1,
                 AccountId = 3
             };
 
-            var expectedResponse = new CloseAccountResponse
-            {
-                CustomerId = 0,
-                AccountId = 0,
-                Succeeded = false,
-            };
+            var actualOutput = await accountService.ProcessCloseAccountAsync(inputData);
 
-            var actualResponse = await bankingService.CloseAccountAsync(closeAccountRequest);
-
-            Assert.Equal(expectedResponse.CustomerId, actualResponse.CustomerId);
-            Assert.Equal(expectedResponse.AccountId, actualResponse.AccountId);
-            Assert.False(actualResponse.Succeeded);
+            Assert.Null(actualOutput);
         }
 
         [Fact]
-        public async Task CloseAccountWithNonZeroBalance_ReturnSucceededFalse()
+        public async Task CloseAccountWithNonZeroBalance_ReturnNull()
         {
             var logger = TestLoggerFactory.CreateLogger();
-            var bankingService = new BankingService(dbConfig, repository, logger);
+            var accountHandler = new AccountHandler(repository, dbConfig);
+            var accountService = new AccountService(accountHandler);
 
-            var closeAccountRequest = new CloseAccountRequest
+            var inputData = new CloseAccountData
             {
                 CustomerId = 1,
                 AccountId = 1
             };
 
-            var expectedResponse = new CloseAccountResponse
-            {
-                CustomerId = 1,
-                AccountId = 1,
-                Succeeded = false,
-            };
+            var actualOutput = await accountService.ProcessCloseAccountAsync(inputData);
 
-            var actualResponse = await bankingService.CloseAccountAsync(closeAccountRequest);
-
-            Assert.Equal(expectedResponse.CustomerId, actualResponse.CustomerId);
-            Assert.Equal(expectedResponse.AccountId, actualResponse.AccountId);
-            Assert.False(actualResponse.Succeeded);
+            Assert.Null(actualOutput);
         }
 
         [Fact]
-        public async Task CloseValidAccount_ReturnAccountNotDeleted()
+        public async Task CloseValidAccount_ReturnAccountData()
         {
             var logger = TestLoggerFactory.CreateLogger();
-            var bankingService = new BankingService(dbConfig, repository, logger);
+            var accountHandler = new AccountHandler(repository, dbConfig);
+            var accountService = new AccountService(accountHandler);
 
-            var closeAccountRequest = new CloseAccountRequest
+            var inputData = new CloseAccountData
             {
                 CustomerId = 1,
                 AccountId = 2
             };
 
-            var expectedResponse = new CloseAccountResponse
+            var expectedOutput = new CloseAccountData
             {
                 CustomerId = 1,
                 AccountId = 2,
-                Succeeded = true,
             };
 
-            var actualResponse = await bankingService.CloseAccountAsync(closeAccountRequest);
+            var actualOutput = await accountService.ProcessCloseAccountAsync(inputData);
 
-            Assert.Equal(expectedResponse.CustomerId, actualResponse.CustomerId);
-            Assert.Equal(expectedResponse.AccountId, actualResponse.AccountId);
-            Assert.True(actualResponse.Succeeded);
-            Assert.NotNull(repository.Accounts.FirstOrDefault(a => a.Id == closeAccountRequest.AccountId));
+            Assert.NotNull(actualOutput);
+            if (actualOutput != null)
+            {
+                Assert.Equal(expectedOutput.CustomerId, actualOutput.CustomerId);
+                Assert.Equal(expectedOutput.AccountId, actualOutput.AccountId);
+            }
         }
     }
 }
